@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title> ztree demo </title>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+        <link rel="stylesheet" href="css/demo.css" type="text/css">
+        <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" type="text/css">
+<!--        <link rel="stylesheet" href="css/zTreeStyle/ztreestyle.css" type="text/css">-->
+<!--        <link rel="stylesheet" href="css/metroStyle/metroStyle.css" rel="stylesheet" type="text/css" />-->
+        <link rel="stylesheet" href="css/awesomeStyle/awesome.css" rel="stylesheet" type="text/css" />
+        <!-- 引入 layui.css -->
+        <link rel="stylesheet" href="//unpkg.com/layui@2.6.8/dist/css/layui.css">
+
+        <!-- 引入 layui.js -->
+        <script src="//unpkg.com/layui@2.6.8/dist/layui.js"></script>
+        <script type="text/javascript" src="js/jquery-1.4.4.min.js"></script>
+        <script type="text/javascript" src="js/jquery.ztree.core.js"></script>
+        <script type="text/javascript" src="js/jquery.ztree.exedit.js"></script>
+        <script>
+            function zTreeOnClick(event, treeId, treeNode) {
+                alert(treeNode.name)
+            }
+            
+            function addRootNode() {
+                var zTree = $.fn.zTree.getZTreeObj("treedemo");
+                layer.prompt({title:'请输入根节点名称'},function(value, index, elem){
+                    $.ajax({
+                        url:'addNode',
+                        data:{
+                            'pid':'000000',
+                            'level':0,
+                            'name':value
+                        },
+                        success:function (data) {
+                            console.log(data)
+                            zTree.addNodes(null, {id:data, pId:'000000', name:value});
+                        }
+                    })
+                    layer.close(index);
+                    return false;
+                });
+
+                return false;
+            }
+
+            var newCount=1
+            function addHoverDom(treeId, treeNode) {
+                var sObj = $("#" + treeNode.tId + "_span");
+                if (treeNode.editNameFlag || $("#addBtn_"+treeNode.tId).length>0) return;
+                var addStr = "<span class='button add' id='addBtn_" + treeNode.tId
+                    + "' title='add node' onfocus='this.blur();'></span>";
+                sObj.after(addStr);
+
+                var btn = $("#addBtn_"+treeNode.tId);
+                if (btn) btn.bind("click", function(){
+                    var zTree = $.fn.zTree.getZTreeObj("treedemo");
+                    layer.prompt(function(value, index, elem){
+                        $.ajax({
+                            url:'addNode',
+                            data:{
+                                'pid':treeNode.id,
+                                'level':treeNode.level+1,
+                                'name':value
+                            },
+                            success:function (data) {
+                                console.log(data)
+                                zTree.addNodes(treeNode, {id:data, pId:treeNode.id, name:value});
+                            }
+                        })
+                        layer.close(index);
+                        return false;
+                    });
+
+                    return false;
+                });
+            }
+
+            function onRemove(event, treeId, treeNode) {
+                $.ajax({
+                    url:'removeNode',
+                    data:{
+                        id:treeNode.id
+                    },
+                    success:function (data) {
+                        console.log(data)
+                    }
+                })
+            }
+
+            function beforeRename(treeId, treeNode, newName, isCancel) {
+                if (newName.length>5){
+                    layer.alert('名字不能超过5个字符');
+                    return false;
+                }
+            }
+            
+            function onRename(event, treeId, treeNode, isCancel) {
+                $.ajax({
+                    url:'updateNode',
+                    data:{
+                        id:treeNode.id,
+                        name:treeNode.name
+                    },
+                    success:function (data) {
+                        console.log(data)
+                    }
+                })
+            }
+            
+            function onDrop(event, treeId, treeNodes, targetNode, moveType) {
+                var targetNodeId;
+                if (moveType==null){
+                    return false
+                }else if (moveType=='inner'){
+                    targetNodeId=targetNode.id
+                }else if(moveType=='prev' || moveType=='next'){
+                    targetNodeId=targetNode.pid
+                }
+
+                $.ajax({
+                    url:'moveNode',
+                    data:{
+                        nodeId:treeNodes[0].id,
+                        targetNodeId:targetNodeId
+                    },
+                    success:function (data) {
+                        console.log(data)
+                    }
+                })
+            }
+            
+            function removeHoverDom(treeId, treeNode) {
+                $("#addBtn_"+treeNode.tId).unbind().remove();
+            };
+        </script>
+    </head>
+    <body>
+        <button type="button" class="layui-btn" onclick="addRootNode()">
+            <i class="layui-icon layui-icon-add-1 layui-font-12"></i> 新增根节点
+        </button>
+        <div>
+          <ul id="treedemo" class="ztree"></ul>
+        </div>
+    </body>
+
+    <script>
+        var ztreeobj;
+        // ztree 的参数配置，深入使用请参考 api 文档（setting 配置详解）
+        var setting = {
+            view:{
+                addHoverDom: addHoverDom,
+                removeHoverDom: removeHoverDom,
+            },
+            callback: {
+                // onClick: zTreeOnClick
+                onRemove:onRemove,
+                onRename:onRename,
+                beforeRename:beforeRename,
+                onDrop:onDrop
+            },
+            edit: {
+                enable: true,
+                showRemoveBtn: true,
+                showRenameBtn: true,
+                removeTitle: "删除节点",
+                renameTitle: "编辑节点名称"
+            }
+        };
+
+        $.get('getTree',function (data) {
+            console.log(data)
+            ztreeobj = $.fn.zTree.init($("#treedemo"), setting, data);
+        })
+    </script>
+  </html>

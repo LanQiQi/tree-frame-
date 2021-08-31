@@ -1,0 +1,19 @@
+server:
+  port: 8080
+spring:
+  datasource:
+    #数据库相关配置
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/china?serverTimezone=UTC&characterEncoding=utf8&useUnicode=true&useSSL=true
+    username: root
+    password: ibn5nanmy
+    max-idle: 10
+    max-wait: 10000
+    min-idle: 5
+    initial-size: 5
+
+  thymeleaf:
+    cache: false # 开发时关闭缓存,不然没法看到实时页面
+    mode: LEGACYHTML5 # 用非严格的 HTML
+    servlet:
+      content-type: text/html
